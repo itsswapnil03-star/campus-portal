@@ -160,9 +160,9 @@ def new_ticket():
                 return render_template('new.html', categories=CATEGORIES)
             saved_name = '%s.%s' % (uuid.uuid4().hex, ext)
             if s3:
-             s3.upload_fileobj(f, S3_BUCKET, saved_name)
-        else:
-         f.save(os.path.join(UPLOAD_DIR, saved_name))
+                s3.upload_fileobj(f, S3_BUCKET, saved_name)
+            else:
+                f.save(os.path.join(UPLOAD_DIR, saved_name))
         t = Ticket(title=request.form['title'].strip()[:120],
                    description=request.form['description'].strip(),
                    category=category,
@@ -174,7 +174,6 @@ def new_ticket():
         log.info('TICKET_CREATED id=%s category=%s', t.id, category)
         return redirect(url_for('detail', tid=t.id))
     return render_template('new.html', categories=CATEGORIES)
-
 
 @app.get('/tickets/<int:tid>')
 @login_required
