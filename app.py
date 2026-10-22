@@ -159,10 +159,10 @@ def new_ticket():
                 flash('Only png, jpg and pdf files are allowed.')
                 return render_template('new.html', categories=CATEGORIES)
             saved_name = '%s.%s' % (uuid.uuid4().hex, ext)
-           if s3:
-    s3.upload_fileobj(f, S3_BUCKET, saved_name)
-else:
-    f.save(os.path.join(UPLOAD_DIR, saved_name))
+            if s3:
+             s3.upload_fileobj(f, S3_BUCKET, saved_name)
+        else:
+         f.save(os.path.join(UPLOAD_DIR, saved_name))
         t = Ticket(title=request.form['title'].strip()[:120],
                    description=request.form['description'].strip(),
                    category=category,
@@ -213,14 +213,14 @@ def ticket_file(tid):
     if not t.attachment:
         abort(404)
     if s3:
-    url = s3.generate_presigned_url(
+         url = s3.generate_presigned_url(
         'get_object',
         Params={'Bucket': S3_BUCKET, 'Key': t.attachment,
                 'ResponseContentDisposition': 'attachment'},
         ExpiresIn=60)
     return redirect(url)
 
-return send_from_directory(UPLOAD_DIR, t.attachment, as_attachment=True)
+    return send_from_directory(UPLOAD_DIR, t.attachment, as_attachment=True)
 
 
 @app.cli.command('promote')
