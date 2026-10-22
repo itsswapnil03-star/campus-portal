@@ -5,3 +5,4 @@ Flask-WTF
 Flask-Limiter
 gunicorn
 psycopg2-binary
+boto3

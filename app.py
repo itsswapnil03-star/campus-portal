@@ -16,6 +16,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 UPLOAD_DIR = os.path.join(BASE_DIR, 'uploads')
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+import boto3
+S3_BUCKET = os.environ.get('S3_BUCKET')
+s3 = boto3.client('s3', region_name=os.environ.get('AWS_DEFAULT_REGION')) if S3_BUCKET else None
 
 app = Flask(__name__)
 app.config.update(
@@ -23,7 +26,7 @@ app.config.update(
     SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(BASE_DIR, 'portal.db'),
     MAX_CONTENT_LENGTH=5 * 1024 * 1024,
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SECURE=False,   # demo on http://localhost
+    SESSION_COOKIE_SECURE=True,   # demo on http://localhost
     SESSION_COOKIE_SAMESITE='Lax',
 )
 
@@ -156,7 +159,10 @@ def new_ticket():
                 flash('Only png, jpg and pdf files are allowed.')
                 return render_template('new.html', categories=CATEGORIES)
             saved_name = '%s.%s' % (uuid.uuid4().hex, ext)
-            f.save(os.path.join(UPLOAD_DIR, saved_name))
+           if s3:
+    s3.upload_fileobj(f, S3_BUCKET, saved_name)
+else:
+    f.save(os.path.join(UPLOAD_DIR, saved_name))
         t = Ticket(title=request.form['title'].strip()[:120],
                    description=request.form['description'].strip(),
                    category=category,
@@ -206,7 +212,15 @@ def ticket_file(tid):
         abort(403)
     if not t.attachment:
         abort(404)
-    return send_from_directory(UPLOAD_DIR, t.attachment, as_attachment=True)
+    if s3:
+    url = s3.generate_presigned_url(
+        'get_object',
+        Params={'Bucket': S3_BUCKET, 'Key': t.attachment,
+                'ResponseContentDisposition': 'attachment'},
+        ExpiresIn=60)
+    return redirect(url)
+
+return send_from_directory(UPLOAD_DIR, t.attachment, as_attachment=True)
 
 
 @app.cli.command('promote')
