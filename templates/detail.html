@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block body %}
+<h2>#{{ t.id }} {{ t.title }}</h2>
+<p><b>By:</b> {{ owner }} | <b>Category:</b> {{ t.category }} | <b>Status:</b> {{ t.status }} | {{ t.created_at.strftime('%d %b %Y %H:%M') }} UTC</p>
+<p>{{ t.description }}</p>
+{% if t.attachment %}<p><a href='{{ url_for('ticket_file', tid=t.id) }}'>Download attachment</a></p>{% endif %}
+{% if current_user.role in ('officer', 'admin') %}
+<form method='post' action='{{ url_for('set_status', tid=t.id) }}'>
+<input type='hidden' name='csrf_token' value='{{ csrf_token() }}'>
+<select name='status'>{% for s in statuses %}<option {{ 'selected' if s == t.status }}>{{ s }}</option>{% endfor %}</select>
+<button>Update status</button>
+</form>
+{% endif %}
+{% endblock %}

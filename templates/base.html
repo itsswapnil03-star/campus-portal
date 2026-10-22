@@ -1,0 +1,21 @@
+<!doctype html>
+<html><head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>Campus Complaint Portal</title>
+<link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css'>
+</head><body><main class='container'>
+<nav><ul><li><strong>Campus Portal</strong></li></ul><ul>
+{% if current_user.is_authenticated %}
+<li><a href='{{ url_for('tickets') }}'>Complaints</a></li>
+{% if current_user.role == 'student' %}<li><a href='{{ url_for('new_ticket') }}'>New complaint</a></li>{% endif %}
+<li><form method='post' action='{{ url_for('logout') }}' style='margin:0'>
+<input type='hidden' name='csrf_token' value='{{ csrf_token() }}'>
+<button class='secondary'>Logout ({{ current_user.name }})</button></form></li>
+{% else %}
+<li><a href='{{ url_for('login') }}'>Login</a></li>
+<li><a href='{{ url_for('register') }}'>Register</a></li>
+{% endif %}
+</ul></nav>
+{% for m in get_flashed_messages() %}<article>{{ m }}</article>{% endfor %}
+{% block body %}{% endblock %}
+</main></body></html>

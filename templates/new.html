@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block body %}
+<h2>New complaint</h2>
+<form method='post' enctype='multipart/form-data'>
+<input type='hidden' name='csrf_token' value='{{ csrf_token() }}'>
+<input name='title' placeholder='Short title' maxlength='120' required>
+<select name='category'>{% for c in categories %}<option>{{ c }}</option>{% endfor %}</select>
+<textarea name='description' placeholder='Describe the problem' required></textarea>
+<input type='file' name='attachment' accept='.png,.jpg,.jpeg,.pdf'>
+<label><input type='checkbox' name='anonymous'> Hide my name from staff</label>
+<button>Submit</button>
+</form>
+{% endblock %}

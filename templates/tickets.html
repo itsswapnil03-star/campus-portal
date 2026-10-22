@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block body %}
+<h2>{{ 'My complaints' if current_user.role == 'student' else 'Complaints' }}</h2>
+<table>
+<tr><th>#</th><th>Title</th><th>Category</th><th>Status</th><th>Date</th></tr>
+{% for t in tickets %}
+<tr><td>{{ t.id }}</td>
+<td><a href='{{ url_for('detail', tid=t.id) }}'>{{ t.title }}</a></td>
+<td>{{ t.category }}</td><td>{{ t.status }}</td>
+<td>{{ t.created_at.strftime('%d %b %Y') }}</td></tr>
+{% else %}
+<tr><td colspan='5'>Nothing here yet.</td></tr>
+{% endfor %}
+</table>
+{% endblock %}

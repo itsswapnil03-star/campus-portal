@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block body %}
+<h2>Register</h2>
+<form method='post'>
+<input type='hidden' name='csrf_token' value='{{ csrf_token() }}'>
+<input name='name' placeholder='Full name' required>
+<input name='email' type='email' placeholder='Email' required>
+<input name='password' type='password' placeholder='Password (8+ characters)' required>
+<button>Create account</button>
+</form>
+{% endblock %}
