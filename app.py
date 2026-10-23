@@ -1,3 +1,4 @@
+from werkzeug.middleware.proxy_fix import ProxyFix
 import os
 import uuid
 import logging
@@ -21,6 +22,7 @@ S3_BUCKET = os.environ.get('S3_BUCKET')
 s3 = boto3.client('s3', region_name=os.environ.get('AWS_DEFAULT_REGION')) if S3_BUCKET else None
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
 app.config.update(
     SECRET_KEY='demo-secret-change-me',
     SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(BASE_DIR, 'portal.db'),
