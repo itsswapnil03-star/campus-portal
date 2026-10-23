@@ -1,11 +1,40 @@
 {% extends 'base.html' %}
+{% block title %}Create account · Campus Portal{% endblock %}
 {% block body %}
-<h2>Register</h2>
-<form method='post'>
-<input type='hidden' name='csrf_token' value='{{ csrf_token() }}'>
-<input name='name' placeholder='Full name' required>
-<input name='email' type='email' placeholder='Email' required>
-<input name='password' type='password' placeholder='Password (8+ characters)' required>
-<button>Create account</button>
-</form>
+<div class="auth">
+  <section class="auth-art">
+    <a class="brand" href="{{ url_for('login') }}">
+      <span class="brand-mark"><svg class="ic"><use href="#i-check"/></svg></span>
+      <span><b>Campus Portal</b><small>Complaint desk</small></span>
+    </a>
+    <div>
+      <h1>Five departments. One place to report.</h1>
+      <p>Hostel, Mess, Library, IT and Academics each have their own officer, so your complaint reaches the person who can fix it.</p>
+    </div>
+    <div class="stack" aria-hidden="true">
+      <div class="mini cat-mess"><span class="ico-tile"><svg class="ic"><use href="#i-mess"/></svg></span><div><b>Mess</b><small>Food quality, hygiene, timings</small></div></div>
+      <div class="mini cat-academics"><span class="ico-tile"><svg class="ic"><use href="#i-academics"/></svg></span><div><b>Academics</b><small>Classes, exams, results</small></div></div>
+      <div class="mini cat-hostel"><span class="ico-tile"><svg class="ic"><use href="#i-hostel"/></svg></span><div><b>Hostel</b><small>Rooms, water, power, safety</small></div></div>
+    </div>
+  </section>
+
+  <section class="auth-form">
+    <div class="auth-card">
+      <h2>Create your account</h2>
+      <p class="sub">Students register here. Staff accounts are set up by the portal administrator.</p>
+      <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="field"><label for="name">Full name</label><input id="name" name="name" type="text" autocomplete="name" required autofocus></div>
+        <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="username" placeholder="you@college.edu" required></div>
+        <div class="field"><label for="password">Password</label>
+          <div class="pw"><input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required>
+          <button type="button" onclick="togglePw(this)" aria-label="Show or hide password"><svg class="ic"><use href="#i-eye"/></svg></button></div>
+          <div class="hint">At least 8 characters.</div>
+        </div>
+        <button class="btn primary block">Create account</button>
+      </form>
+      <p class="swap">Already registered? <a href="{{ url_for('login') }}">Log in</a></p>
+    </div>
+  </section>
+</div>
 {% endblock %}

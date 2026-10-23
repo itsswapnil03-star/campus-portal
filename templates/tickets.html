@@ -1,15 +1,177 @@
 {% extends 'base.html' %}
+{% block title %}{{ 'My complaints' if current_user.role == 'student' else 'Complaints' }} · Campus Portal{% endblock %}
 {% block body %}
-<h2>{{ 'My complaints' if current_user.role == 'student' else 'Complaints' }}</h2>
-<table>
-<tr><th>#</th><th>Title</th><th>Category</th><th>Status</th><th>Date</th></tr>
-{% for t in tickets %}
-<tr><td>{{ t.id }}</td>
-<td><a href='{{ url_for('detail', tid=t.id) }}'>{{ t.title }}</a></td>
-<td>{{ t.category }}</td><td>{{ t.status }}</td>
-<td>{{ t.created_at.strftime('%d %b %Y') }}</td></tr>
+{% set total = tickets|length %}
+{% set n_sub = tickets|selectattr('status','equalto','Submitted')|list|length %}
+{% set n_asg = tickets|selectattr('status','equalto','Assigned')|list|length %}
+{% set n_prog = tickets|selectattr('status','equalto','In progress')|list|length %}
+{% set n_res = tickets|selectattr('status','equalto','Resolved')|list|length %}
+{% set cats = ['Hostel','Mess','Library','IT','Academics'] %}
+
+<div class="page-head">
+  <div>
+    <h1>Hi, {{ current_user.name.split(' ')[0] }}</h1>
+    <p class="sub">
+      {% if total == 0 %}
+        {% if current_user.role == 'student' %}You haven't raised any complaints yet.{% else %}No complaints to handle right now.{% endif %}
+      {% elif current_user.role == 'student' %}
+        {{ total - n_res }} open, {{ n_res }} resolved.
+      {% elif current_user.role == 'officer' %}
+        {{ total - n_res }} open in {{ current_user.department }}, {{ n_res }} resolved.
+      {% else %}
+        {{ total - n_res }} open across all departments, {{ n_res }} resolved.
+      {% endif %}
+    </p>
+  </div>
+  {% if current_user.role == 'student' %}
+  <a class="btn primary" href="{{ url_for('new_ticket') }}"><svg class="ic"><use href="#i-plus"/></svg>New complaint</a>
+  {% endif %}
+</div>
+
+{% if total == 0 %}
+<div class="empty">
+  <h2>{{ 'Nothing raised yet' if current_user.role == 'student' else 'All clear' }}</h2>
+  {% if current_user.role == 'student' %}
+  <p>Something wrong in your hostel, mess, library, labs or classes? Tell us and the right officer will see it.</p>
+  <a class="btn primary" href="{{ url_for('new_ticket') }}"><svg class="ic"><use href="#i-plus"/></svg>Raise your first complaint</a>
+  {% else %}
+  <p>New complaints for {{ current_user.department if current_user.role == 'officer' else 'any department' }} will show up here.</p>
+  {% endif %}
+</div>
 {% else %}
-<tr><td colspan='5'>Nothing here yet.</td></tr>
-{% endfor %}
-</table>
+
+<div class="dist">
+  <div class="dist-bar" role="img" aria-label="Complaints by status">
+    {% if n_sub %}<i class="d-sub" style="flex-grow:{{ n_sub }}"></i>{% endif %}
+    {% if n_asg %}<i class="d-asg" style="flex-grow:{{ n_asg }}"></i>{% endif %}
+    {% if n_prog %}<i class="d-prog" style="flex-grow:{{ n_prog }}"></i>{% endif %}
+    {% if n_res %}<i class="d-res" style="flex-grow:{{ n_res }}"></i>{% endif %}
+  </div>
+  <div class="legend" id="legend">
+    <button type="button" class="leg" data-st="Submitted" aria-pressed="false"><i class="d-sub"></i>Submitted <b>{{ n_sub }}</b></button>
+    <button type="button" class="leg" data-st="Assigned" aria-pressed="false"><i class="d-asg"></i>Assigned <b>{{ n_asg }}</b></button>
+    <button type="button" class="leg" data-st="In progress" aria-pressed="false"><i class="d-prog"></i>In progress <b>{{ n_prog }}</b></button>
+    <button type="button" class="leg" data-st="Resolved" aria-pressed="false"><i class="d-res"></i>Resolved <b>{{ n_res }}</b></button>
+  </div>
+</div>
+
+<div class="toolbar">
+  <label class="search"><svg class="ic"><use href="#i-search"/></svg><input id="q" type="search" placeholder="Search by title or description" aria-label="Search complaints"></label>
+  <select id="sort" aria-label="Sort complaints">
+    <option value="new">Newest first</option>
+    <option value="old">Oldest first</option>
+    <option value="status">By status</option>
+  </select>
+  <div class="view" role="group" aria-label="Layout">
+    <button type="button" data-view="list" aria-pressed="true" aria-label="List view"><svg class="ic"><use href="#i-list"/></svg></button>
+    <button type="button" data-view="grid" aria-pressed="false" aria-label="Card view"><svg class="ic"><use href="#i-grid"/></svg></button>
+  </div>
+</div>
+
+<div class="chips" id="chips" role="group" aria-label="Filter by category">
+  <button type="button" class="chip" data-cat="all" aria-pressed="true">All <em>{{ total }}</em></button>
+  {% for c in cats %}
+  <button type="button" class="chip cat-{{ c|lower }}" data-cat="{{ c }}" aria-pressed="false"><svg class="ic"><use href="#i-{{ c|lower }}"/></svg>{{ c }} <em>{{ tickets|selectattr('category','equalto',c)|list|length }}</em></button>
+  {% endfor %}
+</div>
+
+<p class="count" id="count" aria-live="polite">{{ total }} {{ 'complaint' if total == 1 else 'complaints' }}</p>
+
+<div class="tlist view-list" id="tlist">
+  {% for t in tickets %}
+  <a class="tk cat-{{ t.category|lower }}" href="{{ url_for('detail', tid=t.id) }}"
+     data-cat="{{ t.category }}" data-status="{{ t.status }}" data-ts="{{ t.created_at.strftime('%Y%m%d%H%M%S') }}"
+     data-search="{{ (t.title ~ ' ' ~ t.category ~ ' ' ~ t.description)|lower }}">
+    <span class="tk-top">
+      <span class="ico-tile"><svg class="ic"><use href="#i-{{ t.category|lower }}"/></svg></span>
+      <span class="pill st-{{ t.status|lower|replace(' ','-') }}">{{ t.status }}</span>
+    </span>
+    <span class="tk-main">
+      <span class="tk-title">{{ t.title }}</span>
+      <span class="tk-meta">#{{ t.id }} in {{ t.category }}{% if t.attachment %}, has attachment{% endif %}</span>
+      <span class="tk-desc">{{ t.description|truncate(110) }}</span>
+    </span>
+    <span class="tk-date">{{ t.created_at.strftime('%d %b %Y') }}</span>
+  </a>
+  {% endfor %}
+</div>
+
+<div class="empty" id="nomatch" hidden>
+  <h2>No matches</h2>
+  <p>Nothing fits those filters. Clear the search or pick another category or status.</p>
+  <button type="button" class="btn ghost" id="reset">Clear filters</button>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if tickets %}
+<script>
+(function(){
+  var list=document.getElementById('tlist'); if(!list) return;
+  var items=[].slice.call(list.querySelectorAll('.tk'));
+  var state={cat:'all',st:'all',q:'',sort:'new'};
+  var order={'Submitted':0,'Assigned':1,'In progress':2,'Resolved':3};
+
+  function apply(){
+    var n=0;
+    items.forEach(function(el){
+      var ok=(state.cat==='all'||el.dataset.cat===state.cat)
+          &&(state.st==='all'||el.dataset.status===state.st)
+          &&(!state.q||el.dataset.search.indexOf(state.q)>-1);
+      el.hidden=!ok; if(ok) n++;
+    });
+    document.getElementById('nomatch').hidden=n!==0;
+    list.hidden=n===0;
+    document.getElementById('count').textContent=n+(n===1?' complaint':' complaints');
+  }
+  function sortItems(){
+    items.sort(function(a,b){
+      if(state.sort==='old') return a.dataset.ts<b.dataset.ts?-1:1;
+      if(state.sort==='status'){
+        var d=order[a.dataset.status]-order[b.dataset.status];
+        if(d) return d;
+      }
+      return a.dataset.ts<b.dataset.ts?1:-1;
+    });
+    items.forEach(function(el){list.appendChild(el)});
+  }
+  function pressed(group,attr,val){
+    [].forEach.call(group.querySelectorAll('button['+attr+']'),function(b){
+      b.setAttribute('aria-pressed',b.getAttribute(attr)===val?'true':'false');
+    });
+  }
+  var chips=document.getElementById('chips'), legend=document.getElementById('legend');
+  chips.addEventListener('click',function(e){
+    var b=e.target.closest('button[data-cat]'); if(!b) return;
+    state.cat=b.dataset.cat; pressed(chips,'data-cat',state.cat); apply();
+  });
+  legend.addEventListener('click',function(e){
+    var b=e.target.closest('button[data-st]'); if(!b) return;
+    state.st=(state.st===b.dataset.st)?'all':b.dataset.st;
+    pressed(legend,'data-st',state.st); apply();
+  });
+  document.getElementById('q').addEventListener('input',function(){
+    state.q=this.value.trim().toLowerCase(); apply();
+  });
+  document.getElementById('sort').addEventListener('change',function(){
+    state.sort=this.value; sortItems();
+  });
+  var views=document.querySelector('.view');
+  function setView(v){
+    list.className='tlist view-'+v; pressed(views,'data-view',v);
+    try{localStorage.setItem('tview',v)}catch(e){}
+  }
+  views.addEventListener('click',function(e){
+    var b=e.target.closest('button[data-view]'); if(b) setView(b.dataset.view);
+  });
+  document.getElementById('reset').addEventListener('click',function(){
+    state={cat:'all',st:'all',q:'',sort:state.sort};
+    document.getElementById('q').value='';
+    pressed(chips,'data-cat','all'); pressed(legend,'data-st','none'); apply();
+  });
+  try{var v=localStorage.getItem('tview'); if(v==='grid'||v==='list') setView(v);}catch(e){}
+})();
+</script>
+{% endif %}
 {% endblock %}

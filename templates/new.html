@@ -1,13 +1,116 @@
 {% extends 'base.html' %}
+{% block title %}New complaint · Campus Portal{% endblock %}
 {% block body %}
-<h2>New complaint</h2>
-<form method='post' enctype='multipart/form-data'>
-<input type='hidden' name='csrf_token' value='{{ csrf_token() }}'>
-<input name='title' placeholder='Short title' maxlength='120' required>
-<select name='category'>{% for c in categories %}<option>{{ c }}</option>{% endfor %}</select>
-<textarea name='description' placeholder='Describe the problem' required></textarea>
-<input type='file' name='attachment' accept='.png,.jpg,.jpeg,.pdf'>
-<label><input type='checkbox' name='anonymous'> Hide my name from staff</label>
-<button>Submit</button>
-</form>
+{% set hints = {
+  'Hostel':'Rooms, water, power, safety',
+  'Mess':'Food quality, hygiene, timings',
+  'Library':'Books, seating, access',
+  'IT':'Wi-Fi, labs, accounts',
+  'Academics':'Classes, exams, results'
+} %}
+<a class="back" href="{{ url_for('tickets') }}"><svg class="ic"><use href="#i-back"/></svg>My complaints</a>
+<h1>Raise a complaint</h1>
+<p class="sub">Say what's wrong and where. It goes straight to the officer for that department.</p>
+
+<div class="new-grid">
+  <form method="post" enctype="multipart/form-data" id="nf">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="field">
+      <label for="title">Title</label>
+      <input id="title" name="title" type="text" maxlength="120" required placeholder="e.g. No hot water on the 3rd floor">
+      <div class="hint right"><span id="tc">0</span>/120</div>
+    </div>
+
+    <fieldset class="field">
+      <legend>Which department is this for?</legend>
+      <div class="cats">
+        {% for c in categories %}
+        <label class="cat cat-{{ c|lower }}">
+          <input type="radio" name="category" value="{{ c }}" required>
+          <span class="cat-body">
+            <span class="ico-tile"><svg class="ic"><use href="#i-{{ c|lower }}"/></svg></span>
+            <b>{{ c }}</b>
+            <small>{{ hints[c] }}</small>
+          </span>
+        </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+
+    <div class="field">
+      <label for="description">Details</label>
+      <textarea id="description" name="description" required placeholder="What happened, since when, and who is affected?"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="attachment">Photo or document <span style="font-weight:500;color:var(--muted)">(optional)</span></label>
+      <div class="drop" id="drop">
+        <input id="attachment" type="file" name="attachment" accept=".png,.jpg,.jpeg,.pdf">
+        <svg class="ic"><use href="#i-upload"/></svg>
+        <span id="dropt"><b>Choose a file</b> or drop it here</span>
+        <small id="drops">PNG, JPG or PDF, up to 5 MB</small>
+      </div>
+      <div class="ferr" id="ferr" hidden></div>
+    </div>
+
+    <div class="switch-wrap">
+      <label class="switch">
+        <input type="checkbox" name="anonymous">
+        <span class="track" aria-hidden="true"></span>
+        <span><b>Hide my name from officers</b><small>Admins can still see who submitted it.</small></span>
+      </label>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" id="go">Submit complaint</button>
+      <a class="btn ghost" href="{{ url_for('tickets') }}">Cancel</a>
+    </div>
+  </form>
+
+  <aside>
+    <div class="aside-box">
+      <h2>What happens next</h2>
+      <ol class="flow">
+        <li><span>1</span><div><b>Submitted</b><small>Your complaint is saved and you can track it right away.</small></div></li>
+        <li><span>2</span><div><b>Assigned</b><small>The officer for the department takes it on.</small></div></li>
+        <li><span>3</span><div><b>In progress</b><small>Work has started on the fix.</small></div></li>
+        <li><span>4</span><div><b>Resolved</b><small>The issue is closed. Raise a new one if it comes back.</small></div></li>
+      </ol>
+    </div>
+    <div class="aside-box">
+      <div class="priv"><svg class="ic"><use href="#i-shield"/></svg><p>Only you, the officer for that department and the admin can open your complaint and its attachment.</p></div>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  var t=document.getElementById('title'),tc=document.getElementById('tc');
+  t.addEventListener('input',function(){tc.textContent=t.value.length});
+
+  var f=document.getElementById('attachment'),drop=document.getElementById('drop'),
+      dt=document.getElementById('dropt'),ds=document.getElementById('drops'),err=document.getElementById('ferr');
+  var okExt=['png','jpg','jpeg','pdf'];
+  function reset(){drop.classList.remove('has');dt.innerHTML='<b>Choose a file</b> or drop it here';ds.textContent='PNG, JPG or PDF, up to 5 MB'}
+  f.addEventListener('change',function(){
+    err.hidden=true;
+    var file=f.files[0]; if(!file){reset();return}
+    var ext=file.name.split('.').pop().toLowerCase();
+    if(okExt.indexOf(ext)<0){err.textContent='Only PNG, JPG and PDF files are allowed.';err.hidden=false;f.value='';reset();return}
+    if(file.size>5*1024*1024){err.textContent='That file is over 5 MB. Choose a smaller one.';err.hidden=false;f.value='';reset();return}
+    drop.classList.add('has');
+    dt.textContent=file.name;
+    ds.textContent=(file.size/1024<1024?Math.round(file.size/1024)+' KB':(file.size/1048576).toFixed(1)+' MB')+', click to change';
+  });
+
+  document.getElementById('nf').addEventListener('submit',function(){
+    var b=document.getElementById('go');
+    setTimeout(function(){b.disabled=true;b.textContent='Submitting'},0);
+  });
+  window.addEventListener('pageshow',function(){var b=document.getElementById('go');b.disabled=false;b.textContent='Submit complaint'});
+})();
+</script>
 {% endblock %}

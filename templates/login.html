@@ -1,10 +1,38 @@
 {% extends 'base.html' %}
+{% block title %}Log in · Campus Portal{% endblock %}
 {% block body %}
-<h2>Login</h2>
-<form method='post'>
-<input type='hidden' name='csrf_token' value='{{ csrf_token() }}'>
-<input name='email' type='email' placeholder='Email' required>
-<input name='password' type='password' placeholder='Password' required>
-<button>Login</button>
-</form>
+<div class="auth">
+  <section class="auth-art">
+    <a class="brand" href="{{ url_for('login') }}">
+      <span class="brand-mark"><svg class="ic"><use href="#i-check"/></svg></span>
+      <span><b>Campus Portal</b><small>Complaint desk</small></span>
+    </a>
+    <div>
+      <h1>Complaints that get an answer.</h1>
+      <p>Report a problem once. The officer for that department picks it up, and you can follow each status change from your phone.</p>
+    </div>
+    <div class="stack" aria-hidden="true">
+      <div class="mini cat-it"><span class="ico-tile"><svg class="ic"><use href="#i-it"/></svg></span><div><b>Wi-Fi down in Block C</b><small>IT</small></div><span class="pill st-in-progress">In progress</span></div>
+      <div class="mini cat-hostel"><span class="ico-tile"><svg class="ic"><use href="#i-hostel"/></svg></span><div><b>Water cooler repaired</b><small>Hostel</small></div><span class="pill st-resolved">Resolved</span></div>
+      <div class="mini cat-library"><span class="ico-tile"><svg class="ic"><use href="#i-library"/></svg></span><div><b>Reading hall AC not working</b><small>Library</small></div><span class="pill st-assigned">Assigned</span></div>
+    </div>
+  </section>
+
+  <section class="auth-form">
+    <div class="auth-card">
+      <h2>Log in</h2>
+      <p class="sub">Use the email you registered with.</p>
+      <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="username" placeholder="you@college.edu" required autofocus></div>
+        <div class="field"><label for="password">Password</label>
+          <div class="pw"><input id="password" name="password" type="password" autocomplete="current-password" required>
+          <button type="button" onclick="togglePw(this)" aria-label="Show or hide password"><svg class="ic"><use href="#i-eye"/></svg></button></div>
+        </div>
+        <button class="btn primary block">Log in</button>
+      </form>
+      <p class="swap">New here? <a href="{{ url_for('register') }}">Create an account</a></p>
+    </div>
+  </section>
+</div>
 {% endblock %}

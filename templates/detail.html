@@ -1,14 +1,64 @@
 {% extends 'base.html' %}
+{% block title %}#{{ t.id }} {{ t.title }} · Campus Portal{% endblock %}
 {% block body %}
-<h2>#{{ t.id }} {{ t.title }}</h2>
-<p><b>By:</b> {{ owner }} | <b>Category:</b> {{ t.category }} | <b>Status:</b> {{ t.status }} | {{ t.created_at.strftime('%d %b %Y %H:%M') }} UTC</p>
-<p>{{ t.description }}</p>
-{% if t.attachment %}<p><a href='{{ url_for('ticket_file', tid=t.id) }}'>Download attachment</a></p>{% endif %}
-{% if current_user.role in ('officer', 'admin') %}
-<form method='post' action='{{ url_for('set_status', tid=t.id) }}'>
-<input type='hidden' name='csrf_token' value='{{ csrf_token() }}'>
-<select name='status'>{% for s in statuses %}<option {{ 'selected' if s == t.status }}>{{ s }}</option>{% endfor %}</select>
-<button>Update status</button>
-</form>
-{% endif %}
+{% set idx = statuses.index(t.status) if t.status in statuses else 0 %}
+<a class="back" href="{{ url_for('tickets') }}"><svg class="ic"><use href="#i-back"/></svg>{{ 'My complaints' if current_user.role == 'student' else 'All complaints' }}</a>
+
+<div class="d-head">
+  <div>
+    <div class="d-id">Complaint #{{ t.id }}</div>
+    <h1>{{ t.title }}</h1>
+  </div>
+  <span class="pill st-{{ t.status|lower|replace(' ','-') }}">{{ t.status }}</span>
+</div>
+
+<ol class="steps" aria-label="Progress">
+  {% for s in statuses %}
+  <li class="{{ 'done' if loop.index0 < idx else ('now' if loop.index0 == idx else '') }}"{% if loop.index0 == idx %} aria-current="step"{% endif %}>
+    <b>{% if loop.index0 < idx or (loop.index0 == idx and s == 'Resolved') %}<svg class="ic"><use href="#i-check"/></svg>{% else %}{{ loop.index }}{% endif %}</b>
+    {{ s }}
+  </li>
+  {% endfor %}
+</ol>
+
+<div class="d-grid">
+  <section class="d-body">
+    <h2>Details</h2>
+    <p class="d-text">{{ t.description }}</p>
+    {% if t.attachment %}
+    <a class="file" href="{{ url_for('ticket_file', tid=t.id) }}">
+      <span class="ico-tile"><svg class="ic"><use href="#i-clip"/></svg></span>
+      <span><b>Download attachment</b><small>{{ t.attachment.rsplit('.',1)[-1]|upper }} file</small></span>
+    </a>
+    {% endif %}
+  </section>
+
+  <aside>
+    <div class="aside-box">
+      <h2>About this complaint</h2>
+      <dl class="facts">
+        <div><dt>Reported by</dt><dd>{{ owner }}</dd></div>
+        <div><dt>Department</dt><dd><span class="cat-{{ t.category|lower }}" style="color:var(--c)">{{ t.category }}</span></dd></div>
+        <div><dt>Raised</dt><dd>{{ t.created_at.strftime('%d %b %Y') }}<br><small style="font-weight:500;color:var(--muted)">{{ t.created_at.strftime('%H:%M') }} UTC</small></dd></div>
+      </dl>
+      {% if t.anonymous %}
+      <p class="anon" style="margin-top:16px"><svg class="ic"><use href="#i-shield"/></svg>Name hidden from officers</p>
+      {% endif %}
+    </div>
+
+    {% if current_user.role in ('officer', 'admin') %}
+    <div class="aside-box">
+      <h2>Update status</h2>
+      <form method="post" action="{{ url_for('set_status', tid=t.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="seg">
+          {% for s in statuses %}
+          <button name="status" value="{{ s }}" {{ 'disabled' if s == t.status }}>{{ s }}{% if s == t.status %}<svg class="ic" style="width:17px;height:17px"><use href="#i-check"/></svg>{% endif %}</button>
+          {% endfor %}
+        </div>
+      </form>
+    </div>
+    {% endif %}
+  </aside>
+</div>
 {% endblock %}
