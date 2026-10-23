@@ -25,7 +25,9 @@ app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
 app.config.update(
     SECRET_KEY='demo-secret-change-me',
-    SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(BASE_DIR, 'portal.db'),
+    SQLALCHEMY_DATABASE_URI=os.environ.get(
+        'DATABASE_URL', ''
+    ).replace('postgres://', 'postgresql://') or 'sqlite:///' + os.path.join(BASE_DIR, 'portal.db'),
     MAX_CONTENT_LENGTH=5 * 1024 * 1024,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SECURE=True,   # demo on http://localhost
